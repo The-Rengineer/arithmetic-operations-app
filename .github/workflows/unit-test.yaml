@@ -1,6 +1,5 @@
 name: Run Python Unit Tests
 
-# PR 作成・更新時と main マージ時にトリガー
 on:
   pull_request:
     branches:
@@ -25,13 +24,23 @@ jobs:
         with:
           python-version: '3.12'
 
+      # pip キャッシュを利用
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       # 仮想環境作成と依存関係インストール
       - name: Install dependencies
         run: |
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          pip install fastapi httpx pytest requests uvicorn
+          # requirements.txt があればそれを使う
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       # ユニットテスト実行
       - name: Run Unit Tests
