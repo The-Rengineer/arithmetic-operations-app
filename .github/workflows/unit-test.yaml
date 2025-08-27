@@ -39,7 +39,6 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          # requirements.txt があればそれを使う
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       # ユニットテスト実行
