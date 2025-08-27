@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from src.agent_server import app
+import requests
 
 client = TestClient(app)
 
@@ -38,3 +39,22 @@ def test_agent_operations(expr, expected_result):
             mock_post.assert_called_with("http://localhost:8003/mul", json={"a":6.0, "b":3.0})
         elif "/" in expr:
             mock_post.assert_called_with("http://localhost:8004/div", json={"a":8.0, "b":2.0})
+
+# 異常系
+def test_invalid_expression():
+    response = client.post("/calculate", json={"expr": "abc"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid expression"
+
+def test_unsupported_operator():
+    response = client.post("/calculate", json={"expr": "2^3"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid expression"
+
+
+def test_request_exception():
+    with patch("src.agent_server.requests.post") as mock_post:
+        mock_post.side_effect = requests.exceptions.RequestException("Server down")
+        response = client.post("/calculate", json={"expr": "2+2"})
+        assert response.status_code == 500
+        assert "Server down" in response.json()["detail"]
